@@ -7,7 +7,7 @@ const client = new Client({
   host: 'localhost',
   database: 'pruebas',
   password: 'root',
-  port: 5432, // Puerto predeterminado de PostgreSQL
+  port: 5432,
 });
 
 // Función para leer datos desde la consola
