@@ -1,6 +1,9 @@
 // Importamos los módulos necesarios
+import dotenv from 'dotenv';
 import nw from 'node-windows';
 import { exec } from 'child_process';
+
+dotenv.config();
 
 // Creamos una nueva instancia de EventLogger
 const log = new nw.EventLogger('MiBachero');
@@ -17,7 +20,7 @@ const serviceConfig = {
   nodeOptions: [
     '--harmony',
     '--max-old-space-size=4096'
-  ]
+  ],
 };
 
 // Creamos una nueva instancia de la clase Service
@@ -74,6 +77,10 @@ svc.on('uninstallFailed', function(error) {
   console.error(`Error al desinstalar el servicio: ${error}`);
   log.error(`Error al desinstalar el servicio: ${error}`);
 });
+
+svc.logOnAs.domain = process.env.DOMAIN;
+svc.logOnAs.account = process.env.ACCOUNT;
+svc.logOnAs.password = process.env.PASSWORD;
 
 // Instalamos el servicio
 svc.install();
