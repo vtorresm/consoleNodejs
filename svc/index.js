@@ -1,87 +1,97 @@
-// Importamos los módulos necesarios
+// service.js
+import { Service } from 'node-windows';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import fs from 'fs';
+import { spawn } from 'child_process';
 import dotenv from 'dotenv';
-import nw from 'node-windows';
-import { exec } from 'child_process';
 
 dotenv.config();
 
-// Creamos una nueva instancia de EventLogger
-const log = new nw.EventLogger('MiBachero');
+const password = process.env.PASSWORD;
+
+// Ruta al archivo .bat que se ejecutará
+const batFilePath = 'C:\\Bachero\\Operations.bat';
+
+// Obtén __dirname en módulos ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Configuración del servicio
-const serviceConfig = {
-  // Nombre del servicio
-  name: 'MiBachero',
-  // Descripción del servicio
-  description: 'Este es un ejemplo de servicio MiBachero creado con node-windows',
-  // Script que se ejecutará al iniciar el servicio
-  script: 'C:\\prueba\\script.js',
-  // Opciones adicionales para el servicio
-  nodeOptions: [
-    '--harmony',
-    '--max-old-space-size=4096'
-  ],
-};
-
-// Creamos una nueva instancia de la clase Service
-const svc = new nw.Service(serviceConfig);
-
-// Evento que se dispara cuando el servicio se instala
-svc.on('install', function() {
-  console.log('Servicio instalado');
-  svc.start();
+const svc = new Service({
+  name: 'ResetOperations',
+  description:
+    'Servicio ResetOperations creado con node-windows para monitorerar el bachero Operations.bat y ejecutarlo cada 5 minutos.',
+  script: join(__dirname, 'app.js'), // Ruta al archivo principal de tu aplicación
 });
 
-// Evento que se dispara cuando el servicio se inicia
-svc.on('start', function() {
-  console.log('Servicio iniciado');
+// Método para ejecutar el archivo .bat
+function executeBatFile() {
+  // Verificar si el archivo .bat existe
+  if (!fs.existsSync(batFilePath)) {
+    console.error(`El archivo ${batFilePath} no existe.`);
+    return;
+  }
 
-  // Ejecutamos el archivo .bat
-  exec('C:\\prueba\\archivo.bat', function(err) {
-    if (err) {
-      console.error(`Error al ejecutar el archivo .bat: ${err}`);
-      log.error(`Error al ejecutar el archivo .bat: ${err}`);
-    }
+  // Ejecutar el archivo .bat
+  console.log('Ejecutando archivo Operations.bat...');
+  // Aquí puedes agregar cualquier lógica adicional que necesites, como la duración de la ejecución, etc.
+  const bat = spawn(batFilePath);
+
+  // Manejar eventos de salida y error
+  bat.stdout.on('data', (data) => {
+    console.log(data.toString());
   });
 
-  // Detenemos el servicio después de tres minutos
-  setTimeout(function() {
-    svc.stop();
-  }, 60000); // 180000 milisegundos son 3 minutos
+  bat.stderr.on('data', (data) => {
+    console.error(data.toString());
+
+    // Obtén la fecha y hora actual
+    const date = new Date();
+
+    // Formatea la fecha y hora como una cadena en el formato YYYY-MM-DD HH:MM:SS
+    const dateTimeString = `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(
+      date.getHours()
+    ).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(
+      date.getSeconds()
+    ).padStart(2, '0')}`;
+
+    // Crea el nombre del archivo de log con la fecha
+    const logFileName = `C:\\logs\\error-${dateTimeString.slice(0, 10)}.log`;
+
+    // Registrar el error con la fecha y hora
+    fs.appendFileSync(logFileName, `${dateTimeString} - ${data.toString()}\n`);
+  });
+
+  bat.on('exit', (code) => {
+    console.log(
+      `Proceso de archivo Operations.bat finalizado con código ${code}`
+    );
+  });
+}
+
+// Configurar el servicio
+svc.on('install', () => {
+  console.log('Servicio instalado.');
+  // Configurar la autenticación del servici
+  svc.logOnAs.domain = process.env.DOMAIN;
+  svc.logOnAs.account = process.env.ACCOUNT;
+  svc.logOnAs.password = process.env.PASSWORD;
+  // Ejecutar el archivo .bat después de la instalación
+  executeBatFile();
 });
 
-// Evento que se dispara cuando el servicio se detiene
-svc.on('stop', function() {
-  console.log('Servicio detenido');
+svc.on('uninstall', () => {
+  console.log('Servicio desinstalado.');
 });
 
-// Evento que se dispara cuando el servicio se desinstala
-svc.on('uninstall', function() {
-  console.log('Servicio desinstalado');
-});
-
-// Evento que se dispara cuando ocurre un error al iniciar el servicio
-svc.on('startFailed', function(error) {
-  console.error(`Error al iniciar el servicio: ${error}`);
-  log.error(`Error al iniciar el servicio: ${error}`);
-});
-
-// Evento que se dispara cuando ocurre un error al detener el servicio
-svc.on('stopFailed', function(error) {
-  console.error(`Error al detener el servicio: ${error}`);
-  log.error(`Error al detener el servicio: ${error}`);
-});
-
-// Evento que se dispara cuando ocurre un error al desinstalar el servicio
-svc.on('uninstallFailed', function(error) {
-  console.error(`Error al desinstalar el servicio: ${error}`);
-  log.error(`Error al desinstalar el servicio: ${error}`);
-});
-
-svc.logOnAs.domain = process.env.DOMAIN;
-svc.logOnAs.account = process.env.ACCOUNT;
-svc.logOnAs.password = process.env.PASSWORD;
-
-// Instalamos el servicio
-svc.install();
-//svc.uninstall();
+// Instalar o desinstalar el servicio según el argumento de línea de comandos
+if (process.argv[2] === 'install') {
+  svc.install();
+} else if (process.argv[2] === 'uninstall') {
+  svc.uninstall();
+} else {
+  console.error('Uso: node app.js install|uninstall');
+}
