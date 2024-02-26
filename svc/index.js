@@ -2,13 +2,14 @@
 import { Service } from 'node-windows';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import os from 'os';
 import fs from 'fs';
 import { spawn } from 'child_process';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const password = process.env.PASSWORD;
+//const password = process.env.PASSWORD;
 
 // Ruta al archivo .bat que se ejecutará
 const batFilePath = 'C:\\Bachero\\Operations.bat';
@@ -75,12 +76,40 @@ function executeBatFile() {
 // Configurar el servicio
 svc.on('install', () => {
   console.log('Servicio instalado.');
-  // Configurar la autenticación del servici
+  // Configurar la autenticación del servicio
   svc.logOnAs.domain = process.env.DOMAIN;
   svc.logOnAs.account = process.env.ACCOUNT;
   svc.logOnAs.password = process.env.PASSWORD;
-  // Ejecutar el archivo .bat después de la instalación
-  executeBatFile();
+
+  // Obtén el nombre del usuario local actual
+  const localUser = os.userInfo().username;
+
+  // Comprueba si el usuario local y el dominio son los mismos que los de las variables de entorno
+  if (
+    localUser === process.env.ACCOUNT &&
+    os.hostname() === process.env.DOMAIN
+  ) {
+    // Ejecutar el archivo .bat después de la instalación
+    executeBatFile();
+  } else {
+    // Si no, registra un mensaje de error
+    const errorMessage = `El usuario local (${localUser}) o el dominio (${os.hostname()}) no coinciden con las variables de entorno (${
+      process.env.ACCOUNT
+    }, ${process.env.DOMAIN}).`;
+    console.error(errorMessage);
+
+    // Y escribe el mensaje de error en el archivo .log
+    const date = new Date();
+    const dateTimeString = `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(
+      date.getHours()
+    ).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(
+      date.getSeconds()
+    ).padStart(2, '0')}`;
+    const logFileName = `C:\\logs\\error-${dateTimeString.slice(0, 10)}.log`;
+    fs.appendFileSync(logFileName, `${dateTimeString} - ${errorMessage}\n`);
+  }
 });
 
 svc.on('uninstall', () => {
