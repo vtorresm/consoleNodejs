@@ -122,5 +122,7 @@ if (process.argv[2] === 'install') {
 } else if (process.argv[2] === 'uninstall') {
   svc.uninstall();
 } else {
-  console.error('Uso: node app.js install|uninstall');
+  console.error(
+    'Error: Argumento no válido. Debe ser "node app.js install ó node app.js unistall'
+  );
 }
