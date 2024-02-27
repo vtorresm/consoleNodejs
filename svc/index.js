@@ -9,8 +9,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-//const password = process.env.PASSWORD;
-
 // Ruta al archivo .bat que se ejecutará
 const batFilePath = 'C:\\Bachero\\Operations.bat';
 
@@ -22,20 +20,38 @@ const __dirname = dirname(__filename);
 const svc = new Service({
   name: 'ResetOperations',
   description:
-    'Servicio ResetOperations creado con node-windows para monitorerar el bachero Operations.bat y ejecutarlo cada 5 minutos.',
+    'Servicio ResetOperations creado con node-windows para monitorear el bachero Operations.bat',
   script: join(__dirname, 'app.js'), // Ruta al archivo principal de tu aplicación
 });
+
+// Función para obtener la fecha y hora actual como una cadena en el formato YYYY-MM-DD HH:MM:SS
+function getDateTimeString() {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    '0'
+  )}-${String(date.getDate()).padStart(2, '0')} ${String(
+    date.getHours()
+  ).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(
+    date.getSeconds()
+  ).padStart(2, '0')}`;
+}
+
+// Función para registrar un mensaje en un archivo .log
+function logToFile(message) {
+  const dateTimeString = getDateTimeString();
+  const logFileName = `C:\\logs\\error-${dateTimeString.slice(0, 10)}.log`;
+  fs.appendFileSync(logFileName, `${dateTimeString} - ${message}\n`);
+}
 
 // Método para ejecutar el archivo .bat
 function executeBatFile() {
   // Verificar si el archivo .bat existe
   if (!fs.existsSync(batFilePath)) {
-    console.error(`El archivo ${batFilePath} no existe.`);
+    logToFile(`El archivo ${batFilePath} no existe.`);
     return;
   }
 
-  // Ejecutar el archivo .bat
-  console.log('Ejecutando archivo Operations.bat...');
   // Aquí puedes agregar cualquier lógica adicional que necesites, como la duración de la ejecución, etc.
   const bat = spawn(batFilePath);
 
@@ -45,28 +61,12 @@ function executeBatFile() {
   });
 
   bat.stderr.on('data', (data) => {
-    console.error(data.toString());
-
-    // Obtén la fecha y hora actual
-    const date = new Date();
-
-    // Formatea la fecha y hora como una cadena en el formato YYYY-MM-DD HH:MM:SS
-    const dateTimeString = `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(
-      date.getHours()
-    ).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(
-      date.getSeconds()
-    ).padStart(2, '0')}`;
-
-    // Crea el nombre del archivo de log con la fecha
-    const logFileName = `C:\\logs\\error-${dateTimeString.slice(0, 10)}.log`;
-
-    // Registrar el error con la fecha y hora
-    fs.appendFileSync(logFileName, `${dateTimeString} - ${data.toString()}\n`);
+    logToFile(data.toString());
   });
 
   bat.on('exit', (code) => {
+    const errorMessage = `Proceso de archivo Operations.bat finalizado con código ${code}`;
+    logToFile(errorMessage);
     console.log(
       `Proceso de archivo Operations.bat finalizado con código ${code}`
     );
@@ -75,8 +75,8 @@ function executeBatFile() {
 
 // Configurar el servicio
 svc.on('install', () => {
-  console.log('Servicio instalado.');
-  // Configurar la autenticación del servicio
+  console.log('Servicio instalado correctamente...');
+
   svc.logOnAs.domain = process.env.DOMAIN;
   svc.logOnAs.account = process.env.ACCOUNT;
   svc.logOnAs.password = process.env.PASSWORD;
@@ -84,7 +84,7 @@ svc.on('install', () => {
   // Obtén el nombre del usuario local actual
   const localUser = os.userInfo().username;
 
-  // Comprueba si el usuario local y el dominio son los mismos que los de las variables de entorno
+  // Verificar si el usuario local y el dominio coinciden con las variables de entorno
   if (
     localUser === process.env.ACCOUNT &&
     os.hostname() === process.env.DOMAIN
@@ -96,19 +96,12 @@ svc.on('install', () => {
     const errorMessage = `El usuario local (${localUser}) o el dominio (${os.hostname()}) no coinciden con las variables de entorno (${
       process.env.ACCOUNT
     }, ${process.env.DOMAIN}).`;
-    console.error(errorMessage);
-
-    // Y escribe el mensaje de error en el archivo .log
-    const date = new Date();
-    const dateTimeString = `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(
-      date.getHours()
-    ).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(
-      date.getSeconds()
-    ).padStart(2, '0')}`;
-    const logFileName = `C:\\logs\\error-${dateTimeString.slice(0, 10)}.log`;
-    fs.appendFileSync(logFileName, `${dateTimeString} - ${errorMessage}\n`);
+    logToFile(errorMessage);
+    console.log(
+      `El usuario local (${localUser}) o el dominio (${os.hostname()}) no coinciden con las variables de entorno (${
+        process.env.ACCOUNT
+      }, ${process.env.DOMAIN}).`
+    );
   }
 });
 
@@ -119,10 +112,11 @@ svc.on('uninstall', () => {
 // Instalar o desinstalar el servicio según el argumento de línea de comandos
 if (process.argv[2] === 'install') {
   svc.install();
+  logToFile('Service installed.');
 } else if (process.argv[2] === 'uninstall') {
   svc.uninstall();
+  logToFile('Service uninstalled.');
 } else {
-  console.error(
-    'Error: Argumento no válido. Debe ser "node app.js install ó node app.js unistall'
-  );
+  const errorMessage = `Error: Argumento no válido. Uso correcto: - Para instalar: node app.js install - Para desinstalar: node app.js uninstall`;
+  logToFile(errorMessage);
 }
