@@ -57,7 +57,8 @@ async function executeBatFile() {
           `Proceso de archivo Operations.bat finalizado con código ${code}`
         );
       });
-    }, 10 * 60 * 1000); // 10 minutos en milisegundos
+    }, 0.5 * 60 * 1000); // 1 minuto en milisegundos
+    //}, 10 * 60 * 1000); // 10 minutos en milisegundos
   }
 }
 
