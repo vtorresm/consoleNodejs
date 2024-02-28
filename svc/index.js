@@ -1,10 +1,10 @@
+import { Service } from 'node-windows';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import os from 'os';
+import fs from 'fs';
 import { spawn } from 'child_process';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import { Service } from 'node-windows';
-import os from 'os';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
 
 import checkStatus from './common/checkStatus.js';
 import { logToFile } from './common/logToFile.js';
