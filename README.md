@@ -6,7 +6,13 @@ Servicio para el monitoreo de Operaciones
 
 ## Installation
 
-Install Servicio con NodeJS
+Instalar dependencias Servicio
+
+```bash
+  npm install
+```
+
+Instalar Servicio con NodeJS
 
 ```bash
   node app.js install
@@ -34,4 +40,3 @@ To run this project, you will need to add the following environment variables to
 ## Authors
 
 - [@vtorresm](https://github.com/vtorresm)
-

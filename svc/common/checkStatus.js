@@ -1,8 +1,8 @@
+import dotenv from 'dotenv';
 import { request as _request } from 'https';
 import streamConsumers from 'stream/consumers';
-import dotenv from 'dotenv';
 
-import { logToFile } from './logFile.js';
+import { logToFile } from './logToFile.js';
 
 dotenv.config();
 
