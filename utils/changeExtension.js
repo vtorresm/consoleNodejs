@@ -13,16 +13,16 @@ rl.question(chalk.green('Por favor, introduce la ruta del directorio: '), (direc
     fs.readdir(directorio, (err, archivos) => {
         if (err) {
             console.error(chalk.red(err))
-            returclearn
+            return
         }
 
         const extensiones = [...new Set(archivos.map(archivo => path.extname(archivo)))]
 
         inquirer.prompt([
             {
-                type: 'list',
-                name: 'extension',
-                message: '¿Qué extensión de archivo te gustaría cambiar?',
+                type: 'checkbox',
+                name: 'extensiones',
+                message: '¿Qué extensiones de archivo te gustaría cambiar?',
                 choices: extensiones
             },
             {
@@ -34,7 +34,7 @@ rl.question(chalk.green('Por favor, introduce la ruta del directorio: '), (direc
             archivos.forEach((archivo) => {
                 const extension = path.extname(archivo)
 
-                if (extension === answers.extension) {
+                if (answers.extensiones.includes(extension)) {
                     const nombreArchivo = path.basename(archivo, extension)
                     const nuevoNombre = `${directorio}\\${nombreArchivo}.${answers.nuevaExtension}`
 
