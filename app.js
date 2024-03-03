@@ -1,1 +1,2 @@
-import './svc/index.js';
+//import './svc/index.js';
+import './utils/generateTarCommand.js';
