@@ -132,3 +132,5 @@ dist
 
 daemon/
 datos.xlsx
+reporte.xlsx
+data.db
