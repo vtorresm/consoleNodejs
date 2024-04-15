@@ -41,4 +41,4 @@ To run this project, you will need to add the following environment variables to
 
 ## Authors
 
-- [@vtorresm](https://github.com/vtorresm)
+- [@vtorresm](https://github.com/vtorresm) ❤
